@@ -7,7 +7,12 @@ int my_strlen(char *str) {
      */
 
     // IMPLEMENT YOUR CODE HERE
-    return 0;
+    int length = 0;
+    while(*str != '\0'){
+    	str++;
+    	length++;
+	}
+    return length;
 }
 
 
@@ -19,6 +24,18 @@ void my_strcat(char *str_1, char *str_2) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+    while (*str_1 != '\0') {
+        str_1++;
+    }
+
+    while (*str_2 != '\0') {
+        *str_1 = *str_2;
+        str_1++;
+        str_2++;
+    }
+
+    *str_1 = '\0';
+
 }
 
 
@@ -31,6 +48,34 @@ char* my_strstr(char *s, char *p) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+    if (*p == 0) {
+        return s;
+    }
+
+    int len = 0;
+    char *temp = p;
+    while (*p != 0) {
+        len++;
+        p++;
+    }
+    p = temp;
+
+    char *s_temp = s;
+    while (*s_temp != 0) {
+        if (*p == *s_temp) {
+            char *temp1 = s_temp;
+            char *p_temp = p;
+            while (*p_temp != 0 && *p_temp == *s_temp) {
+                p_temp++;
+                s_temp++;
+            }
+            if (*p_temp == 0) {
+                return temp1;
+            }
+        }
+        s_temp++;
+    }
+
     return 0;
 }
 
@@ -97,6 +142,16 @@ void rgb2gray(float *in, float *out, int h, int w) {
 
     // IMPLEMENT YOUR CODE HERE
     // ...
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            int index = (y * w + x) * 3;
+            float r = in[index];
+            float g = in[index + 1]; 
+            float b = in[index + 2]; 
+            float gray = 0.1140 * b + 0.5870 * g + 0.2989 * r;
+            out[y * w + x] = gray;
+        }
+    }
 }
 
 // 练习5，实现图像处理算法 resize：缩小或放大图像
@@ -199,10 +254,40 @@ void resize(float *in, float *out, int h, int w, int c, float scale) {
     int new_h = h * scale, new_w = w * scale;
     // IMPLEMENT YOUR CODE HERE
 
+    for (int y = 0; y < new_h; y++) {
+        for (int x = 0; x < new_w; x++) {
+            float x0 = x / scale;
+            float y0 = y / scale;
+
+            int x1 = static_cast<int>(x0);
+            int y1 = static_cast<int>(y0);
+            int x2 = x1 + 1;
+            int y2 = y1 + 1;
+            if (x2 >= w || y2 >= h) {
+                continue;
+            }
+            float dx = x0 - x1;
+            float dy = y0 - y1;
+            for (int i = 0; i < c; i++) {
+                float P1 = in[(y1 * w + x1) * c + i];
+                float P2 = in[(y1 * w + x2) * c + i];
+                float P3 = in[(y2 * w + x1) * c + i];
+                float P4 = in[(y2 * w + x2) * c + i];
+                float Q1 = P1 * (1 - dx) + P2 * dx;
+                float Q2 = P3 * (1 - dx) + P4 * dx;
+                float v = Q1 * (1 - dy) + Q2 * dy;
+
+                // 将插值结果写入目标图像
+                out[(y * new_w + x) * c + i] = v;
+            }
+        }
+    }
+    
 }
 
 
 // 练习6，实现图像处理算法：直方图均衡化
+#include <cmath>
 void hist_eq(float *in, int h, int w) {
     /**
      * 将输入图片进行直方图均衡化处理。参数含义：
@@ -221,4 +306,31 @@ void hist_eq(float *in, int h, int w) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+    int n[256] = {0};
+    for (int y = 0; y < h; y++){
+        for(int x = 0; x < w; x++){
+            n[static_cast<int>(in[y * w + x])]++;
+        }
+    }
+
+    int N = h * w;
+    float s[256] = {0};
+    s[0] = n[0] / static_cast<float>(N);
+    for (int i = 1; i < 256; i++){
+        s[i] = s[i - 1] + n[i] / static_cast<float>(N);
+    }
+
+    int new_level[256] = {0};
+    for (int i1 = 0; i1 < 256; i1++){
+        new_level[i1] = static_cast<int>(std::round(s[i1] * 255));
+    }
+
+    for (int y = 0; y < h; y++){
+        for(int x = 0; x < w; x++){
+            in[y * w + x] = new_level[static_cast<int>(in[y * w + x])];
+        }
+    }
+
+
+
 }
